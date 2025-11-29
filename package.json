@@ -1,0 +1,12 @@
+{
+  "name": "hanz-v1-proxy",
+  "version": "1.0.0",
+  "description": "Gemini API Proxy for Vercel Serverless Function",
+  "main": "api/gemini.js",
+  "scripts": {
+    "start": "vercel dev"
+  },
+  "dependencies": {
+    "node-fetch": "2.6.7" 
+  }
+}
