@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HanZ AI Chatbot</title>
+    <style>
+        /* CSS Sederhana untuk Tampilan Chat */
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            margin: 0; 
+            padding: 0; 
+            background-color: #e9ebee; 
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+        .container { 
+            width: 90%;
+            max-width: 600px; 
+            background-color: #fff; 
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1); 
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        h2 {
+            text-align: center;
+            color: #333;
+            padding: 15px 0;
+            border-bottom: 1px solid #eee;
+            margin: 0;
+        }
+        #chat-window { 
+            height: 400px; 
+            overflow-y: auto; 
+            padding: 15px; 
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .message {
+            max-width: 70%;
+            padding: 10px;
+            border-radius: 15px;
+            line-height: 1.4;
+        }
+        .user-message { 
+            align-self: flex-end;
+            background-color: #007bff; 
+            color: white; 
+            border-bottom-right-radius: 0;
+        }
+        .ai-message { 
+            align-self: flex-start;
+            background-color: #e4e6eb; 
+            color: #333; 
+            border-bottom-left-radius: 0;
+        }
+        .input-area {
+            display: flex;
+            padding: 15px;
+            border-top: 1px solid #eee;
+        }
+        #user-input {
+            flex-grow: 1;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 20px;
+            margin-right: 10px;
+            font-size: 16px;
+        }
+        button {
+            padding: 10px 20px;
+            background-color: #28a745;
+            color: white;
+            border: none;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:hover {
+            background-color: #218838;
+        }
+        #status-message {
+            text-align: center;
+            padding: 5px;
+            color: #dc3545;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>HanZ AI Chatbot</h2>
+        <div id="chat-window">
+            <div class="message ai-message">Halo! Saya siap membantu Anda.</div>
+        </div>
+        <div id="status-message"></div>
+        <div class="input-area">
+            <input type="text" id="user-input" placeholder="Ketik pesan Anda...">
+            <button onclick="sendMessage()">Kirim</button>
+        </div>
+    </div>
+
+    <script>
+        // API_URL menunjuk ke file api/gemini.js di Vercel
+        const API_URL = "/api/gemini"; 
+
+        const chatWindow = document.getElementById('chat-window');
+        const userInput = document.getElementById('user-input');
+        const statusMessage = document.getElementById('status-message');
+        const sendButton = document.querySelector('.input-area button');
+
+        userInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                sendMessage();
+            }
+        });
+
+        function displayMessage(sender, text) {
+            const msgDiv = document.createElement('div');
+            msgDiv.classList.add('message', sender === 'user' ? 'user-message' : 'ai-message');
+            msgDiv.textContent = text;
+            chatWindow.appendChild(msgDiv);
+            chatWindow.scrollTop = chatWindow.scrollHeight;
+        }
+
+        async function sendMessage() {
+            const message = userInput.value.trim();
+            if (!message) return;
+
+            userInput.disabled = true;
+            sendButton.disabled = true;
+
+            displayMessage('user', message);
+            userInput.value = '';
+            statusMessage.textContent = 'AI sedang mengetik...';
+
+            try {
+                const requestBody = {
+                    contents: [{
+                        parts: [{ text: message }]
+                    }]
+                };
+
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(requestBody)
+                });
+
+                statusMessage.textContent = '';
+
+                if (!response.ok) {
+                    const errorData = await response.json().catch(() => ({})); 
+                    throw new Error(`Gagal memuat respons. Status: ${response.status}. Detail: ${errorData.error?.message || response.statusText}`);
+                }
+
+                const data = await response.json();
+
+                const aiResponseText = data.candidates[0].content.parts[0].text;
+                displayMessage('ai', aiResponseText);
+
+            } catch (error) {
+                console.error("Error:", error);
+                statusMessage.textContent = `⚠️ Error: ${error.message}`;
+                displayMessage('ai', 'Error: Maaf, terjadi kesalahan komunikasi. Cek konsol dan Environment Variable Vercel.');
+            } finally {
+                userInput.disabled = false;
+                sendButton.disabled = false;
+                userInput.focus();
+            }
+        }
+    </script>
+</body>
+</html>
