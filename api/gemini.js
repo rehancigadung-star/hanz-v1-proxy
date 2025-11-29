@@ -11,7 +11,7 @@ export default async function (req, res) {
         res.status(200).end();
         return;
     }
-
+    
     // 2. HANYA IZINKAN POST
     if (req.method !== 'POST') {
         res.status(405).json({ error: 'Method Not Allowed. POST only' });
@@ -19,13 +19,13 @@ export default async function (req, res) {
     }
 
     try {
+        // SOLUSI UNTUK ERROR 404: Menggunakan nama model yang paling stabil
         const MODEL_NAME = "gemini-1.5-flash"; 
-
+        
         // Ambil API Key dari Environment Variable Vercel
         const GEMINI_KEY = process.env.GEMINI_KEY;
 
         if (!GEMINI_KEY) {
-            // Beri respons yang jelas jika kunci API hilang
              res.status(500).json({ error: { message: "GEMINI_KEY is missing in Vercel Environment Variables. Please configure it." } });
              return;
         }
@@ -33,14 +33,13 @@ export default async function (req, res) {
         const url = 
             `https://generativelanguage.googleapis.com/v1beta/models/${MODEL_NAME}:generateContent?key=${GEMINI_KEY}`;
 
-        const requestBody = req.body;
-
+        // Kirim request ke Google Gemini API
         const apiResponse = await fetch(url, {
             method: "POST",
             headers: { 
                 "Content-Type": "application/json" 
             },
-            body: JSON.stringify(requestBody)
+            body: JSON.stringify(req.body) 
         });
 
         const data = await apiResponse.json();
